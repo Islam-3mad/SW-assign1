@@ -1,0 +1,204 @@
+@startuml 06-er-diagram
+title PayLink - Database ER Diagram (19 tables)
+skinparam shadowing false
+hide circle
+skinparam linetype ortho
+
+entity users {
+  * id : uuid <<PK>>
+  --
+  * name : varchar
+  * phone : varchar <<UK>>
+  * role : varchar
+  * verification_level : varchar
+  * status : varchar
+  blocked_until : timestamp
+}
+entity wallets {
+  * id : uuid <<PK>>
+  --
+  * user_id : uuid <<FK, UK>>
+  * currency : char(3)
+}
+entity ledger_entries {
+  * id : uuid <<PK>>
+  --
+  * wallet_id : uuid <<FK>>
+  payment_id : uuid <<FK>>
+  refund_request_id : uuid <<FK>>
+  * amount : numeric(14,2)
+  * bucket : varchar
+  * entry_type : varchar
+  * reason : varchar
+  * created_at : timestamp
+}
+entity billers {
+  * id : uuid <<PK>>
+  --
+  * name : varchar
+  * active : boolean
+}
+entity biller_services {
+  * id : uuid <<PK>>
+  --
+  * biller_id : uuid <<FK>>
+  * type : varchar
+  * min_amount : numeric(14,2)
+  * max_amount : numeric(14,2)
+  * active : boolean
+}
+entity service_input_fields {
+  * id : uuid <<PK>>
+  --
+  * service_id : uuid <<FK>>
+  * name : varchar
+  * label : varchar
+  validation_regex : varchar
+}
+entity fee_rules {
+  * id : uuid <<PK>>
+  --
+  * service_id : uuid <<FK>>
+  * strategy : varchar
+  fixed_amount : numeric(14,2)
+  percentage : numeric(6,4)
+  min_fee : numeric(14,2)
+  tier_threshold : numeric(14,2)
+  tier_low_fee : numeric(14,2)
+  tier_high_fee : numeric(14,2)
+}
+entity promotions {
+  * id : uuid <<PK>>
+  --
+  * biller_id : uuid <<FK>>
+  * start_date : date
+  * end_date : date
+}
+entity system_config {
+  * key : varchar <<PK>>
+  --
+  * value : varchar
+  updated_by : uuid <<FK>>
+  updated_at : timestamp
+}
+entity payments {
+  * id : uuid <<PK>>
+  --
+  * reference : varchar <<UK>>
+  * idempotency_key : varchar <<UK>>
+  * request_hash : varchar
+  * customer_id : uuid <<FK>>
+  agent_id : uuid <<FK>>
+  * service_id : uuid <<FK>>
+  * input_values : jsonb
+  * amount : numeric(14,2)
+  * fee : numeric(14,2)
+  * total : numeric(14,2)
+  * state : varchar
+  unknown_since : timestamp
+  * created_at : timestamp
+}
+entity payment_state_history {
+  * id : uuid <<PK>>
+  --
+  * payment_id : uuid <<FK>>
+  from_state : varchar
+  * to_state : varchar
+  reason : varchar
+  * at : timestamp
+}
+entity biller_callbacks {
+  * id : uuid <<PK>>
+  --
+  * payment_id : uuid <<FK>>
+  * payload : jsonb
+  * status : varchar
+  * received_at : timestamp
+}
+entity requery_attempts {
+  * id : uuid <<PK>>
+  --
+  * payment_id : uuid <<FK>>
+  * attempt_no : int
+  * scheduled_at : timestamp
+  result : varchar
+}
+entity notifications {
+  * id : uuid <<PK>>
+  --
+  * payment_id : uuid <<FK>>
+  * user_id : uuid <<FK>>
+  * channel : varchar
+  * template : varchar
+  * status : varchar
+  * attempts : int
+}
+entity refund_requests {
+  * id : uuid <<PK>>
+  --
+  * payment_id : uuid <<FK>>
+  * requested_by : uuid <<FK>>
+  decided_by : uuid <<FK>>
+  * status : varchar
+  reason : varchar
+}
+entity audit_log {
+  * id : uuid <<PK>>
+  --
+  * actor_id : uuid <<FK>>
+  * action : varchar
+  entity_type : varchar
+  entity_id : uuid
+  ledger_entry_id : uuid <<FK>>
+  * reason : varchar
+  old_value : varchar
+  new_value : varchar
+  * at : timestamp
+}
+entity settlement_files {
+  * id : uuid <<PK>>
+  --
+  * biller_id : uuid <<FK>>
+  * file_date : date
+}
+entity settlement_records {
+  * id : uuid <<PK>>
+  --
+  * file_id : uuid <<FK>>
+  * biller_reference : varchar
+  * amount : numeric(14,2)
+}
+entity reconciliation_differences {
+  * id : uuid <<PK>>
+  --
+  payment_id : uuid <<FK>>
+  record_id : uuid <<FK>>
+  * diff_type : varchar
+  * reviewed : boolean
+}
+
+users ||--|| wallets : owns
+wallets ||--o{ ledger_entries : records
+payments ||--o{ ledger_entries : causes
+refund_requests |o--o{ ledger_entries : reverses
+users ||--o{ payments : customer
+users |o--o{ payments : agent
+billers ||--o{ biller_services : offers
+biller_services ||--o{ service_input_fields : requires
+biller_services ||--o{ fee_rules : priced_by
+billers ||--o{ promotions : has
+biller_services ||--o{ payments : paid_via
+payments ||--o{ payment_state_history : logs
+payments ||--o{ biller_callbacks : receives
+payments ||--o{ requery_attempts : retried_by
+payments ||--o{ notifications : triggers
+users ||--o{ notifications : receives
+payments ||--o{ refund_requests : has
+users ||--o{ audit_log : acts
+ledger_entries |o--o| audit_log : audited_by
+users |o--o{ system_config : updated_by
+billers ||--o{ settlement_files : sends
+settlement_files ||--o{ settlement_records : contains
+settlement_records |o--o{ reconciliation_differences : about
+payments |o--o{ reconciliation_differences : involved_in
+@enduml

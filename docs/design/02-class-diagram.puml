@@ -1,0 +1,292 @@
+@startuml 02-class-diagram
+title PayLink - Domain Class Diagram
+top to bottom direction
+hide empty members
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+enum Role {
+  CUSTOMER
+  AGENT
+  SUPPORT
+  ADMIN
+  SYSTEM
+}
+enum VerificationLevel {
+  BASIC
+  VERIFIED
+}
+enum AccountStatus {
+  ACTIVE
+  BLOCKED
+}
+enum Bucket {
+  AVAILABLE
+  HELD
+}
+enum EntryType {
+  TOPUP
+  HOLD
+  RELEASE
+  CHARGE
+  FEE
+  COMMISSION
+  REFUND
+  REVERSAL
+}
+enum ServiceType {
+  ELECTRICITY
+  WATER
+  MOBILE_TOPUP
+  INTERNET
+}
+
+package "Accounts & Wallet" {
+  class User {
+    +id : UUID
+    +name : String
+    +phone : String
+    +role : Role
+    +level : VerificationLevel
+    +status : AccountStatus
+    +blockedUntil : DateTime
+  }
+  class Wallet {
+    +id : UUID
+    +currency : String = "EGP"
+    +availableBalance() : Decimal
+    +heldBalance() : Decimal
+    +hold(total, paymentId)
+    +confirmCharge(paymentId)
+    +releaseHold(paymentId)
+    +credit(amount, type, reason)
+  }
+  class LedgerEntry <<append-only>> {
+    +id : UUID
+    +amount : Decimal
+    +bucket : Bucket
+    +type : EntryType
+    +reason : String
+    +createdAt : DateTime
+  }
+}
+
+package "Payment Processing" {
+  class Payment {
+    +id : UUID
+    +reference : String
+    +idempotencyKey : String
+    +requestHash : String
+    +amount : Decimal
+    +fee : Decimal
+    +total : Decimal
+    +unknownSince : DateTime
+    +transitionTo(event)
+  }
+  interface PaymentState {
+    +handle(event, payment) : PaymentState
+  }
+  class InitiatedState
+  class FundsHeldState
+  class SentToBillerState
+  class UnknownState
+  class CompletedState <<final>>
+  class FailedState
+  class RejectedState <<final>>
+  class RefundedState <<final>>
+  class StateChange {
+    +fromState
+    +toState
+    +reason
+    +at : DateTime
+  }
+  class PaymentService {
+    +inquire(service, fields)
+    +pay(request)
+  }
+  class RefundRequest {
+    +status : PENDING|APPROVED|REJECTED
+    +reason : String
+  }
+}
+
+package "Biller Catalog" {
+  class Biller {
+    +id : UUID
+    +name : String
+    +active : Boolean
+  }
+  class BillerService {
+    +id : UUID
+    +type : ServiceType
+    +minAmount : Decimal
+    +maxAmount : Decimal
+    +active : Boolean
+  }
+  class InputField {
+    +name : String
+    +label : String
+    +validationRegex : String
+  }
+}
+
+package "Fees & Commissions" {
+  interface FeeStrategy {
+    +calculate(amount) : Decimal
+  }
+  class FixedFee
+  class PercentageFee {
+    +rate
+    +minFee
+  }
+  class TieredFee
+  class Promotion {
+    +startDate : Date
+    +endDate : Date
+  }
+  class Commission {
+    +rate : Decimal = 0.40
+    +amount : Decimal
+  }
+  class FeeCalculator {
+    +calculate(service, amount) : Decimal
+    +commission(fee) : Decimal
+  }
+  class ConfigEntry {
+    +key : String
+    +value : String
+  }
+}
+
+package "Fraud Checks" {
+  abstract class FraudRule {
+    +check(ctx) : Result
+    +setNext(rule)
+  }
+  class AmountRangeRule
+  class DailyLimitRule
+  class BlockedAccountRule
+  class VelocityRule
+}
+
+package "Biller Integration" {
+  interface BillerAdapter {
+    +inquire(fields) : BillInfo
+    +pay(request) : BillerResult
+    +query(reference) : BillerResult
+  }
+  class ElectroCoAdapter
+  class AquaCoAdapter
+  class TopUpNetAdapter
+  class NetCoAdapter <<optional>>
+  class BillerAdapterFactory {
+    +forService(service) : BillerAdapter
+  }
+  class BillerCallback {
+    +payload
+    +receivedAt
+    +duplicate : Boolean
+  }
+}
+
+package "Notifications" {
+  class Notification {
+    +channel : SMS|EMAIL|PUSH
+    +template : String
+    +status : PENDING|SENT|UNDELIVERED
+    +attempts : int
+  }
+}
+
+package "Reconciliation" {
+  class SettlementFile {
+    +fileDate : Date
+  }
+  class SettlementRecord {
+    +billerReference
+    +amount : Decimal
+  }
+  class ReconciliationDifference {
+    +type
+    +reviewed : Boolean
+  }
+}
+
+class AuditLog <<append-only>> {
+  +actor
+  +action
+  +reason
+  +oldValue
+  +newValue
+  +at : DateTime
+}
+
+User "1" -- "1" Wallet : owns
+Wallet "1" *-- "*" LedgerEntry
+User "1" -- "*" Payment : customer
+User "0..1" -- "*" Payment : agent
+User "0..1" -- "*" Commission : earns
+
+Payment "*" -- "1" BillerService
+Payment "1" o-- "1" PaymentState : current
+Payment "1" *-- "*" StateChange
+Payment "1" -- "*" LedgerEntry : causes
+Payment "1" -- "*" Notification
+Payment "1" -- "*" BillerCallback
+Payment "1" -- "*" RefundRequest
+Payment "1" -- "0..1" Commission : generates
+
+Biller "1" *-- "*" BillerService
+BillerService "1" *-- "*" InputField
+Biller "1" -- "*" Promotion
+
+PaymentService ..> Payment
+PaymentService ..> FeeCalculator
+PaymentService ..> FraudRule
+PaymentService ..> BillerAdapterFactory
+PaymentService ..> Wallet
+
+PaymentState <|.. InitiatedState
+PaymentState <|.. FundsHeldState
+PaymentState <|.. SentToBillerState
+PaymentState <|.. UnknownState
+PaymentState <|.. CompletedState
+PaymentState <|.. FailedState
+PaymentState <|.. RejectedState
+PaymentState <|.. RefundedState
+
+FeeStrategy <|.. FixedFee
+FeeStrategy <|.. PercentageFee
+FeeStrategy <|.. TieredFee
+FeeCalculator o-- FeeStrategy
+FeeCalculator ..> Promotion
+FeeCalculator ..> ConfigEntry
+
+FraudRule <|-- AmountRangeRule
+FraudRule <|-- DailyLimitRule
+FraudRule <|-- BlockedAccountRule
+FraudRule <|-- VelocityRule
+FraudRule o--> FraudRule : next
+
+BillerAdapter <|.. ElectroCoAdapter
+BillerAdapter <|.. AquaCoAdapter
+BillerAdapter <|.. TopUpNetAdapter
+BillerAdapter <|.. NetCoAdapter
+BillerAdapterFactory ..> BillerAdapter : creates
+
+SettlementFile "1" *-- "*" SettlementRecord
+SettlementRecord "*" -- "0..1" Payment : matches
+ReconciliationDifference "*" -- "0..1" SettlementRecord
+ReconciliationDifference "*" -- "0..1" Payment : flags
+
+note bottom of LedgerEntry
+  Balance = SUM(amount) per bucket.
+  Never overwritten, only appended (US-06).
+end note
+
+note right of PaymentService
+  All money fields are exact Decimal,
+  never float (NFR-07).
+end note
+@enduml

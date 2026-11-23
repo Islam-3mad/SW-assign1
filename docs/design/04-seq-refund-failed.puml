@@ -1,0 +1,51 @@
+@startuml 04-seq-refund-failed
+title Sequence - Refund a Failed Payment (US-23, US-27)
+autonumber
+skinparam shadowing false
+
+participant "Trigger\n(biller refusal /\nre-query / reconciliation)" as T
+participant "PaymentService" as PS
+participant "Payment\n(State + History)" as P
+participant "WalletService" as W
+database "Ledger" as L
+participant "AuditLog" as AU
+participant "NotificationService" as N
+actor Customer as C
+
+T -> PS : biller refused,\nor reconciliation proved the biller has no payment
+PS -> P : load payment, read current state
+
+alt SentToBiller and biller refused
+  note over PS : Failed is allowed from SentToBiller
+else Unknown and biller later refuses / reconciliation finds no payment
+  note over PS : Failed is allowed from Unknown only with proof
+else Unknown without proof (timeout, no answer, re-query unanswered)
+  PS -> PS : do nothing, stay Unknown
+  note over PS : Unknown is NEVER refunded automatically
+  PS --> T : no refund
+end
+
+group proof exists (Failed is reachable)
+  PS -> P : transition to Failed (write history)
+  alt hold already released (duplicate trigger)
+    PS --> T : ignored and logged
+  else first time
+    PS -> W : releaseHold(paymentId)
+    W -> L : HELD -352.50 (RELEASE)
+    W -> L : AVAILABLE +352.50 (RELEASE)
+    L --> W : saved
+    W --> PS : hold released
+    PS -> P : Failed -> Refunded (automatic, Q-08)
+    PS -> AU : log(actor, action = REFUND, reason, time)
+    note right of PS : no fee income and no agent\ncommission are credited (US-29)
+    PS ->> N : event PaymentFailed(reason mapped from error code)
+    N -> C : SMS + push with clear reason
+    loop up to 3 retries if delivery fails
+      N -> C : retry send
+    end
+    N -> N : mark "undelivered" if all 4 attempts fail\n(payment state is not affected)
+  end
+end
+
+note over P : Completed, Rejected and Refunded are final.\nAny transition from them is refused and logged (US-17).
+@enduml

@@ -1,0 +1,38 @@
+@startuml 05-state-payment
+title State Diagram - Payment Life Cycle (brief section 2.5)
+skinparam shadowing false
+hide empty description
+
+[*] --> Initiated
+
+Initiated --> FundsHeld : fraud checks pass\nand wallet has enough funds
+Initiated --> Rejected : fraud check fails\nor funds insufficient
+
+FundsHeld --> SentToBiller : request sent to biller
+
+SentToBiller --> Completed : biller confirms\n(or TopUpNet callback "success")
+SentToBiller --> Failed : biller refuses
+SentToBiller --> Unknown : no answer within 10 s\n(or no callback within wait time)
+
+Unknown --> Completed : later confirmation\n(callback, re-query, settlement file)
+Unknown --> Failed : biller later refuses,\nor reconciliation finds no payment
+
+Failed --> Refunded : hold released to wallet
+
+Completed --> [*]
+Rejected --> [*]
+Refunded --> [*]
+
+note right of Unknown
+  Money stays HELD.
+  Re-query at +1, +5, +15 min,
+  then wait for reconciliation.
+  Never refunded automatically.
+end note
+
+note bottom of Refunded
+  Final states: Completed, Rejected, Refunded.
+  Refund of a Completed payment (US-28) is a
+  separate refund request, not a state change.
+end note
+@enduml

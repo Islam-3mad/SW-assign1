@@ -1,0 +1,105 @@
+@startuml 03-seq-pay-bill
+title Sequence - Pay a Bill (US-10, US-15, US-16, US-19, US-21, US-24)
+autonumber
+skinparam shadowing false
+skinparam maxMessageSize 220
+
+actor Customer as C
+participant "PaymentController" as API
+participant "PaymentService" as PS
+participant "FeeCalculator" as FEE
+participant "BillerAdapterFactory" as F
+participant "BillerAdapter" as A
+participant "FraudChain" as FC
+participant "WalletService" as W
+database "Ledger" as L
+participant "Payment\n(State + History)" as P
+participant "AuditLog" as AU
+participant "NotificationService" as N
+participant "Biller\n(external)" as B
+
+== Phase A: Bill inquiry ==
+C -> API : POST /bills/inquiry {service, fields}
+API -> PS : inquire(service, fields)
+PS -> F : forService(service)
+F --> PS : adapter
+PS -> A : inquire(fields)
+A -> B : inquiry (REST / SOAP, biller specific)
+alt biller unavailable
+  A --> PS : error
+  PS --> C : "service temporarily unavailable" (no payment, no money moves)
+else bill not found
+  B --> A : not found
+  PS --> C : "bill not found"
+else bill found
+  B --> A : bill 350.00 EGP
+  A --> PS : BillInfo(amount = 350.00)
+  PS -> FEE : calculate(service, billAmount)
+  note right of FEE : fee rule and promotion\nread from configuration
+  FEE --> PS : fee 2.50
+  PS --> C : amount 350.00 + fee 2.50 = total 352.50
+end
+
+== Phase B: Payment ==
+C -> API : POST /payments {Idempotency-Key, service, fields, amount}
+API -> PS : pay(request)
+PS -> PS : find payment by idempotencyKey
+alt key exists, same data
+  PS --> C : original result (no new charge)
+else key exists, different data
+  PS --> C : error "key reuse with different data"
+else new key
+  PS -> P : create Payment (Initiated)\n(UNIQUE key also blocks simultaneous duplicates)
+  PS -> FC : check(ctx)
+  note right of FC : chain: BlockedAccount -> AmountRange\n-> DailyLimit -> Velocity\n(limits checked on bill amount)
+  alt a rule fails
+    FC --> PS : rejected(reason)
+    PS -> P : Initiated -> Rejected
+    PS --> C : Rejected + reason
+    note over FC, AU : velocity breach also blocks\nthe account 10 min + audit record
+  else all rules pass
+    PS -> W : hold(total = 352.50)
+    note right of W : wallet row locked\nso concurrent payments\nare serialized
+    alt insufficient available balance
+      W --> PS : insufficient funds
+      PS -> P : Initiated -> Rejected
+      PS --> C : Rejected (insufficient funds)
+    else funds held
+      W -> L : AVAILABLE -352.50, HELD +352.50
+      W -> AU : audit(who, when, why)
+      PS -> P : Initiated -> FundsHeld
+      PS -> P : FundsHeld -> SentToBiller
+      PS -> A : pay(reference)
+      A -> B : payment request (unique reference)
+      alt confirmed within 10 s
+        B --> A : paid
+        A --> PS : success
+        PS -> P : SentToBiller -> Completed
+        PS -> W : confirmCharge(paymentId)
+        W -> L : HELD -352.50 (CHARGE)\nPayLink wallet +fee (FEE)\nagent wallet +40% of fee (COMMISSION, if agent)
+        W -> AU : audit(who, when, why)
+        PS ->> N : event PaymentCompleted
+        N -> C : SMS + push (retry rules apply)
+        PS --> C : Completed
+      else biller refuses
+        B --> A : error code
+        A --> PS : refused(mapped reason)
+        PS -> P : SentToBiller -> Failed
+        PS --> C : Failed (refund in progress)
+        ref over PS, W : release hold & refund\nin 04-seq-refund-failed
+      else async accepted (TopUpNet)
+        B --> A : accepted
+        A --> PS : pending
+        PS --> C : being processed
+        note over PS, B : stays SentToBiller until the callback (US-24)\nor the configured callback wait time\nends -> Unknown
+      else no answer in 10 s
+        PS -> P : SentToBiller -> Unknown
+        note right of P : money stays HELD\nnever refunded automatically
+        PS ->> N : event PaymentUnknown
+        PS --> C : "being processed"
+        note over PS, B : re-query at +1, +5, +15 min,\nthen wait for reconciliation (US-22)
+      end
+    end
+  end
+end
+@enduml

@@ -1,0 +1,93 @@
+@startuml 01-use-case
+title PayLink - Use Case Diagram
+left to right direction
+skinparam shadowing false
+
+actor Customer
+actor Agent
+actor Admin
+actor "Support Employee" as Support
+actor "Finance Team" as Finance
+actor "Scheduler\n(system timer)" as Sched
+actor "Billers\n(ElectroCo, AquaCo,\nTopUpNet, NetCo)" as Biller <<external>>
+actor "SMS / Email / Push\nProviders" as NotifProv <<external>>
+
+rectangle "PayLink Backend" {
+  usecase "Register (US-01)" as Reg
+  usecase "Upgrade to Verified (US-02)" as Upg
+  usecase "View Balance & History (US-04)" as Bal
+  usecase "Top Up Wallet (US-05)" as Top
+  usecase "Browse Billers & Fields (US-08)" as Brw
+  usecase "Bill Inquiry (US-10)" as Inq
+  usecase "Pay Bill (US-15, US-16)" as Pay
+  usecase "Pay on Behalf of Customer (US-29)" as PayFor
+  usecase "Calculate Fee (US-11..14)" as Fee
+  usecase "Run Fraud Checks (US-19, US-20)" as Fraud
+  usecase "Velocity Auto-Block (US-20)" as Vel
+  usecase "Call Biller via Adapter (US-25)" as Call
+  usecase "Send Notification (US-30, US-31)" as Notif
+  usecase "Refund Failed Payment (US-27)" as RefF
+  usecase "Handle TopUpNet Callback (US-24)" as Cb
+  usecase "Re-query Unknown Payments (US-22)" as Req
+  usecase "Request Refund of Completed (US-28)" as RefC
+  usecase "Approve / Reject Refund Request (US-28)" as AppR
+  usecase "Manage Billers & Services (US-07)" as MB
+  usecase "Edit Fees & Limits (US-09)" as EF
+  usecase "View Daily Totals (US-35)" as Tot
+  usecase "Search Payment by Reference (US-32)" as Srch
+  usecase "Block / Unblock Account (US-03)" as Blk
+  usecase "Run Daily Reconciliation (US-34)" as Rec
+  usecase "Write Audit Record (US-33)" as Aud
+}
+
+Customer --> Reg
+Customer --> Bal
+Customer --> Top
+Customer --> Brw
+Customer --> Inq
+Customer --> Pay
+Customer --> RefC
+
+Agent --> PayFor
+Agent --> Top
+
+Admin --> Upg
+Admin --> MB
+Admin --> EF
+Admin --> Tot
+
+Support --> Srch
+Support --> Blk
+Support --> AppR
+
+Finance --> Rec
+Finance --> Tot
+
+Sched --> Req
+Sched --> Rec
+
+Call --> Biller
+Biller --> Cb
+Biller --> Rec
+Notif --> NotifProv
+
+Pay ..> Inq : <<include>>
+Pay ..> Fee : <<include>>
+Pay ..> Fraud : <<include>>
+Pay ..> Call : <<include>>
+Pay ..> Notif : <<include>>
+
+Inq ..> Fee : <<include>>
+
+PayFor ..> Pay : <<extend>>
+Vel ..> Fraud : <<extend>>
+RefF ..> Call : <<extend>>
+Cb ..> Pay : <<extend>>
+Req ..> Pay : <<extend>>
+
+note right of Aud
+  Included by every money movement
+  and admin action (not drawn per use
+  case to keep the diagram readable).
+end note
+@enduml

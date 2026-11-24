@@ -1,0 +1,106 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 3521 >>
+stream
+BT /F2 22 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 785 Tm (PayLink Phase 1 Integration and Quality Report) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 754 Tm (PayLink | 24 November 2026 | Integration & Quality Lead) Tj ET
+BT /F2 13 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 735 Tm (1. Project overview) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 713 Tm (PayLink is a Node.js and Express project with a PostgreSQL-backed architecture. Phase 1) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 699 Tm (establishes the requirements, design and development foundation for bill payment and) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 685 Tm (agent-assisted transactions.) Tj ET
+BT /F2 13 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 666 Tm (2. Problem summary) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 644 Tm (The system must handle biller failures and delayed confirmations without double-charging) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 630 Tm (customers, releasing held funds prematurely or recording commission twice. Payments, ledger) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 616 Tm (movements and outcomes need to remain traceable.) Tj ET
+BT /F2 13 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 597 Tm (3. Requirements summary) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 575 Tm (The reviewed requirements pack contains 35 user stories with Given/When/Then criteria, 10) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 561 Tm (measurable non-functional requirements, and 32 questions, ambiguities and decisions. Its) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 547 Tm (priorities are 26 Must, 7 Should and 2 Could. Traceability covers FR-1 through FR-28 and) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 533 Tm (eight hard cases.) Tj ET
+BT /F2 13 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 514 Tm (4. Design overview) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 492 Tm (The six editable PlantUML sources cover use cases, the class model, bill payment and) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 478 Tm (failed-refund sequences, payment states, and the ER model. Together they describe bill) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 464 Tm (inquiry, wallet holds, biller outcomes, reconciliation and ledger updates.) Tj ET
+BT /F2 13 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 445 Tm (5. Integration and consistency review) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 423 Tm (D05: The proposed commission revision credits the full 2.50 EGP fee to PayLink and posts a) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 409 Tm (1.00 EGP transfer to the agent only on eligible agent-assisted payments. PayLink retains) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 395 Tm (1.50 EGP in that example.) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 376 Tm (D08: The supplied refund revision keeps an Unknown payment and its funds HELD when) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 362 Tm (definitive failure proof is absent.) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 343 Tm (D09: The proposed revision accepts an existing Failed state and records the hold release,) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 329 Tm (transition to Refunded and audit together under a payment lock. A subsequent trigger makes) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 315 Tm (no second release. The revised designs were reviewed and all six diagram previews were) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 301 Tm (shown.) Tj ET
+BT /F1 9 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 34 Tm (PayLink Phase 1 / 1 of 2) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 3793 >>
+stream
+BT /F2 22 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 785 Tm (Verification and submission status) Tj ET
+BT /F2 13 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 759 Tm (6. Docker and CI/CD foundation) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 737 Tm (The Dockerfile uses Node.js 20 and npm ci. Compose configures the application and PostgreSQL) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 723 Tm (with a database health check. Islam-3mad reported a clean-clone Compose run and a successful) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 709 Tm (response at localhost:3000. Independent logs, database health and an application-to-database) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 695 Tm (query were not verified.) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 676 Tm (The supplied GitHub Actions YAML runs npm ci, npm run lint, npm test and docker build. It) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 662 Tm (triggers on pushes to main and pull requests targeting main. CI Pipeline #20 passed on main) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 648 Tm (at commit a06eaf9 after PR #10 merged. The build-lint-test job succeeded in 27 seconds,) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 634 Tm (including Run Linter, Run Tests and Build Docker Image. Actions reported one warning whose) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 620 Tm (details were not shown.) Tj ET
+BT /F2 13 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 601 Tm (7. Prompt engineering log) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 579 Tm (The team supplied 16 entries: 5 Requirements entries from Mohannad Mohamed Mostafa, 7 Design) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 565 Tm (entries from Mohamed Saber and 4 DevOps entries from Islam-3mad. Four documented prompt) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 551 Tm (refinements cover incorrect priority counts, a false contradiction claim, refund guards and) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 537 Tm (incomplete PlantUML. The DevOps entries record setup corrections and team-reported) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 523 Tm (verification.) Tj ET
+BT /F2 13 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 504 Tm (8. Quality review findings) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 482 Tm (Confirm concurrent payment and callback deduplication, inquiry-to-hold validation, and) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 468 Tm (ledger and audit consistency across the class and ER diagrams. Check the payment state) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 454 Tm (diagram directly against official brief section 2.5 when available.) Tj ET
+BT /F2 13 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 435 Tm (9. Final deliverables checklist) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 413 Tm (Requirements Markdown and PDF: reviewed. Six PlantUML sources: present in the supplied) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 399 Tm (material; six rendered previews reviewed.) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 380 Tm (Dockerfile and Compose: reviewed; startup team-reported, database connectivity unverified.) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 366 Tm (CI YAML: reviewed; run #20 passed at a06eaf9.) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 347 Tm (Prompt log: 16 entries collected and merged via PR #10. Phase 1 report: prepared.) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 328 Tm (Submission evidence covers the design review, diagram previews, prompt log merge and CI run.) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 314 Tm (Application-to-database connectivity and direct comparison with official brief section 2.5) Tj ET
+BT /F1 10 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 300 Tm (remain unverified.) Tj ET
+BT /F1 9 Tf 0.08 0.19 0.29 rg 1 0 0 1 48 34 Tm (PayLink Phase 1 / 2 of 2) Tj ET
+endstream
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000121 00000 n 
+0000000191 00000 n 
+0000000266 00000 n 
+0000000402 00000 n 
+0000003974 00000 n 
+0000004110 00000 n 
+trailer
+<< /Size 9 /Root 1 0 R >>
+startxref
+7954
+%%EOF

@@ -15,21 +15,20 @@ actor Customer as C
 T -> PS : biller refused,\nor reconciliation proved the biller has no payment
 PS -> P : load payment, read current state
 
-alt SentToBiller and biller refused
-  note over PS : Failed is allowed from SentToBiller
-else Unknown and biller later refuses / reconciliation finds no payment
-  note over PS : Failed is allowed from Unknown only with proof
+alt already Refunded or refund in progress (idempotency guard - D09)
+  PS -> AU : log duplicate refund attempt (no second release)
+  PS --> T : ignored (already refunded / in progress)
 else Unknown without proof (timeout, no answer, re-query unanswered)
   PS -> PS : do nothing, stay Unknown
-  note over PS : Unknown is NEVER refunded automatically
-  PS --> T : no refund
-end
-
-group proof exists (Failed is reachable)
+  note over PS : Unknown is NEVER refunded automatically\nuntil definitive failure proof exists (D08)
+  PS --> T : no refund (funds stay HELD)
+else SentToBiller and biller refused OR Unknown with confirmed failure proof
+  note over PS : Failed is allowed from SentToBiller on refusal,\nor from Unknown only with confirmed proof (D08)
   PS -> P : transition to Failed (write history)
-  alt hold already released (duplicate trigger)
+  alt hold already released or already Refunded (duplicate trigger - D09)
+    PS -> AU : log duplicate refund trigger (no second release)
     PS --> T : ignored and logged
-  else first time
+  else first confirmed refund execution
     PS -> W : releaseHold(paymentId)
     W -> L : HELD -352.50 (RELEASE)
     W -> L : AVAILABLE +352.50 (RELEASE)

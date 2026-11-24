@@ -76,7 +76,8 @@ else new key
         A --> PS : success
         PS -> P : SentToBiller -> Completed
         PS -> W : confirmCharge(paymentId)
-        W -> L : HELD -352.50 (CHARGE)\nPayLink wallet +fee (FEE)\nagent wallet +40% of fee (COMMISSION, if agent)
+        W -> L : HELD -352.50 (CHARGE)\nagent wallet +1.00 (COMMISSION, 40% of 2.50 fee, if agent)\nPayLink wallet +1.50 (NET_FEE, 60% of 2.50 fee)
+        note right of L : 2.50 EGP fee split from fee:\n1.00 EGP to agent + 1.50 EGP net to PayLink
         W -> AU : audit(who, when, why)
         PS ->> N : event PaymentCompleted
         N -> C : SMS + push (retry rules apply)
